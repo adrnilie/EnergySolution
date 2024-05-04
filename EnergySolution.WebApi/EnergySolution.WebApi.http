@@ -1,0 +1,6 @@
+@EnergySolution.WebApi_HostAddress = http://localhost:5154
+
+GET {{EnergySolution.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
