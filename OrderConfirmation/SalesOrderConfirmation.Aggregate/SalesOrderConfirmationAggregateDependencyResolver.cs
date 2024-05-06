@@ -7,5 +7,5 @@ public static class SalesOrderConfirmationAggregateDependencyResolver
 {
     public static IServiceCollection AddSalesOrderConfirmationAggregate(this IServiceCollection services)
         => services
-            .AddScoped<ISalesOrderInitializer, SalesOrderInitializer>();
+            .AddScoped<ISalesOrderConfirmationRepository, SalesOrderConfirmationRepository>();
 }

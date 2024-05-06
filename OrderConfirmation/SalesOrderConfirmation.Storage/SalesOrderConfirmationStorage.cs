@@ -1,30 +1,32 @@
-﻿using SalesOrderConfirmation.Aggregate.Contracts;
+﻿using Newtonsoft.Json;
+using SalesOrderConfirmation.Aggregate.Contracts;
 using SalesOrderConfirmation.Aggregate.Contracts.ValueObjects;
 using SalesOrderConfirmation.Messages;
-using SalesOrderConfirmation.Storage.Contracts;
 using SalesOrderConfirmation.Storage.Entities;
 using SalesOrderConfirmation.Storage.Extensions;
+using System.Reflection;
 
 namespace SalesOrderConfirmation.Storage;
 
 internal sealed class SalesOrderConfirmationStorage : ISalesOrderConfirmationStorage
 {
     private readonly ISalesOrderConfirmationEventsStore _salesOrderConfirmationEventsStore;
-    private readonly ISalesOrderInitializer _salesOrderInitializer;
+    private readonly ISalesOrderConfirmationRepository _salesOrderConfirmationRepository;
 
-    public SalesOrderConfirmationStorage(ISalesOrderConfirmationEventsStore salesOrderConfirmationEventsStore, ISalesOrderInitializer salesOrderInitializer)
+    public SalesOrderConfirmationStorage(
+        ISalesOrderConfirmationEventsStore salesOrderConfirmationEventsStore, 
+        ISalesOrderConfirmationRepository salesOrderConfirmationRepository)
     {
         _salesOrderConfirmationEventsStore = salesOrderConfirmationEventsStore;
-        _salesOrderInitializer = salesOrderInitializer;
+        _salesOrderConfirmationRepository = salesOrderConfirmationRepository;
     }
 
     public async Task<ISalesOrder> LoadOrCreateAsync(SalesOrderStreamId streamId, SalesOrderTenantId tenantId, CancellationToken cancellationToken = new())
     {
         var eventEntities = await _salesOrderConfirmationEventsStore.GetEventStreamAsync(streamId, tenantId, cancellationToken);
-        var events = DeserializeEvents(eventEntities);
+        var events = DeserializeEvents(eventEntities.ToList());
 
-        var salesOrder = _salesOrderInitializer.Create(streamId, tenantId);
-        salesOrder.RestoreFrom(events);
+        var salesOrder = _salesOrderConfirmationRepository.LoadOrCreate(streamId, tenantId, events);
 
         return salesOrder;
     }
@@ -42,19 +44,38 @@ internal sealed class SalesOrderConfirmationStorage : ISalesOrderConfirmationSto
         await _salesOrderConfirmationEventsStore.AddOrUpdateAsync(eventEntities, cancellationToken);
     }
 
-    private static IReadOnlyList<IEvent> DeserializeEvents(IEnumerable<SalesOrderConfirmationTableEntity> eventEntities)
+    private static IReadOnlyList<IEvent> DeserializeEvents(List<SalesOrderConfirmationEventTableEntity> eventEntities)
     {
         var events = new List<IEvent>();
 
+        if (!eventEntities.Any())
+        {
+            return Array.Empty<IEvent>();
+        }
+
+        var salesOrderConfirmationAssembly = Assembly.Load(SalesOrderConfirmationMessages.Instance.FullName!);
+
         foreach (var eventEntity in eventEntities)
         {
-            switch (eventEntity.Body)
+            var eventType = salesOrderConfirmationAssembly.GetType(eventEntity.Type);
+            if (eventType is null)
             {
-                case SalesOrderConfirmed salesOrderConfirmed:
-                    events.Add(salesOrderConfirmed);
-                    break;
-                default:
+                continue;
+            }
+
+            try
+            {
+                var @event = JsonConvert.DeserializeObject(eventEntity.Body, eventType);
+                if (@event is null)
+                {
                     continue;
+                }
+
+                events.Add((IEvent)@event);
+            }
+            catch (Exception)
+            {
+                continue;
             }
         }
 

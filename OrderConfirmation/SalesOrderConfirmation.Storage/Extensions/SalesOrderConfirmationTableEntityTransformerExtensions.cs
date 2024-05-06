@@ -6,10 +6,10 @@ namespace SalesOrderConfirmation.Storage.Extensions;
 
 internal static class SalesOrderConfirmationTableEntityTransformerExtensions
 {
-    internal static IEnumerable<SalesOrderConfirmationTableEntity> ToEntities(this IReadOnlyList<IEvent> events)
+    internal static IEnumerable<SalesOrderConfirmationEventTableEntity> ToEntities(this IReadOnlyList<IEvent> events)
         => events.Select(e => e.ToEntity());
 
-    internal static SalesOrderConfirmationTableEntity ToEntity(this IEvent @event)
+    internal static SalesOrderConfirmationEventTableEntity ToEntity(this IEvent @event)
         => new()
         {
             PartitionKey = $"{@event.StreamId.Value}",
@@ -19,6 +19,7 @@ internal static class SalesOrderConfirmationTableEntityTransformerExtensions
             Version = @event.Version,
             EventName = @event.GetType().Name,
             EventNamespace = @event.GetType().Namespace ?? string.Empty,
+            Type = @event.Type,
             Body = JsonConvert.SerializeObject(@event),
             CreationDate = DateTimeOffset.UtcNow,
         };

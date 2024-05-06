@@ -7,4 +7,5 @@ public interface IEvent
     SalesOrderStreamId StreamId { get; }
     SalesOrderTenantId TenantId { get; }
     int Version { get; }
+    string Type { get; }
 }

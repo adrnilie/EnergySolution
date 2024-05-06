@@ -4,16 +4,16 @@ using SalesOrderConfirmation.Storage.Entities;
 
 namespace SalesOrderConfirmation.Storage;
 
-internal sealed class SalesOrderConfirmationEventsStore : AzureTableStorageRepository<SalesOrderConfirmationTableEntity>, ISalesOrderConfirmationEventsStore
+internal sealed class SalesOrderConfirmationEventsStore : AzureTableStorageRepository<SalesOrderConfirmationEventTableEntity>, ISalesOrderConfirmationEventsStore
 {
     public SalesOrderConfirmationEventsStore(TableStorageConfiguration configuration, string tableName) : base(configuration, tableName)
     {
     }
 
-    public async Task<IEnumerable<SalesOrderConfirmationTableEntity>> GetEventStreamAsync(string streamId, string tenantId, CancellationToken cancellationToken = new())
+    public async Task<IEnumerable<SalesOrderConfirmationEventTableEntity>> GetEventStreamAsync(string streamId, string tenantId, CancellationToken cancellationToken = new())
     {
-        var events = new List<SalesOrderConfirmationTableEntity>();
-        SegmentedResult<SalesOrderConfirmationTableEntity> page = new();
+        var events = new List<SalesOrderConfirmationEventTableEntity>();
+        SegmentedResult<SalesOrderConfirmationEventTableEntity> page = new();
         do
         {
             page = await StartsWithPartialRowkey(streamId, tenantId, 100, page.ContinuationToken!, cancellationToken);
@@ -23,6 +23,6 @@ internal sealed class SalesOrderConfirmationEventsStore : AzureTableStorageRepos
         return events.OrderBy(x => x.Version);
     }
 
-    public async Task AddOrUpdateAsync(IEnumerable<SalesOrderConfirmationTableEntity> entities, CancellationToken cancellationToken = new())
+    public async Task AddOrUpdateAsync(IEnumerable<SalesOrderConfirmationEventTableEntity> entities, CancellationToken cancellationToken = new())
         => await AddOrUpdate(entities, cancellationToken);
 }

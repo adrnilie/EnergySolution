@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using SalesOrderConfirmation.Aggregate.Contracts.Commands;
 using SalesOrderConfirmation.Aggregate.Contracts.ValueObjects;
 using SalesOrderConfirmation.Storage;
-using SalesOrderConfirmation.Storage.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 

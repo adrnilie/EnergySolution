@@ -1,7 +1,7 @@
 ﻿using SalesOrderConfirmation.Aggregate.Contracts;
 using SalesOrderConfirmation.Aggregate.Contracts.ValueObjects;
 
-namespace SalesOrderConfirmation.Storage.Contracts;
+namespace SalesOrderConfirmation.Storage;
 
 public interface ISalesOrderConfirmationStorage
 {
